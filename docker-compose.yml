@@ -1,0 +1,166 @@
+version: "3.8"
+services:
+    postgres:
+        image: postgis/postgis:17-3.4
+        container_name: rapido-postgres
+        restart: unless-stopped
+        ports:
+            - "5432:5432"
+        environment:
+            - POSTGRES_USER=postgres
+            - POSTGRES_PASSWORD=postgres
+            - POSTGRES_DB=rapido
+        command: postgres -c wal_level=logical
+        volumes:
+            - postgres_data:/var/lib/postgresql/data
+        networks:
+            - rapido_net
+
+    redpanda:
+        image: docker.redpanda.com/redpandadata/redpanda:latest
+        container_name: rapido-redpanda
+        command:
+            - redpanda start
+            - --overprovisioned
+            - --smp 1
+            - --memory 1G
+            - --reserve-memory 0M
+            - --node-id 0
+            - --check=false
+            - --kafka-addr PLAINTEXT://0.0.0.0:29092,OUTSIDE://0.0.0.0:9092
+            - --advertise-kafka-addr PLAINTEXT://redpanda:29092,OUTSIDE://localhost:9092
+        ports:
+            - "9092:9092"
+            - "29092:29092"
+        networks:
+            - rapido_net
+
+    redpanda-console:
+        image: docker.redpanda.com/redpandadata/console:latest
+        container_name: rapido-redpanda-console
+        environment:
+            - KAFKA_BROKERS=redpanda:29092
+        ports:
+            - "8081:8080"
+        depends_on:
+            - redpanda
+        networks:
+            - rapido_net
+
+    minio:
+        image: minio/minio
+        container_name: rapido-minio
+        command: server /data --console-address ":9001"
+        ports:
+            - "9000:9000"
+            - "9001:9001"
+        environment:
+            - MINIO_ROOT_USER=admin
+            - MINIO_ROOT_PASSWORD=password
+        volumes:
+            - minio_data:/data
+        networks:
+            - rapido_net
+
+    opensearch:
+        image: opensearchproject/opensearch:2
+        container_name: rapido-opensearch
+        environment:
+            - discovery.type=single-node
+            - plugins.security.disabled=true
+            - OPENSEARCH_INITIAL_ADMIN_PASSWORD=MyP@ssw0rd!Strong
+            - OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m
+        ports:
+            - "9200:9200"
+        volumes:
+            - opensearch_data:/usr/share/opensearch/data
+        networks:
+            - rapido_net
+
+    opensearch-dashboards:
+        image: opensearchproject/opensearch-dashboards:2
+        container_name: rapido-opensearch-ui
+        environment:
+            - OPENSEARCH_HOSTS=http://opensearch:9200
+            - DISABLE_SECURITY_DASHBOARDS_PLUGIN=true
+        ports:
+            - "5601:5601"
+        depends_on:
+            - opensearch
+        networks:
+            - rapido_net
+
+    redis:
+        image: redis/redis-stack:latest
+        container_name: rapido-redis
+        restart: unless-stopped
+        ports:
+            - "6379:6379"
+        volumes:
+            - redis_data:/data
+        networks:
+            - rapido_net
+
+    openfga:
+        image: openfga/openfga:latest
+        container_name: rapido-openfga
+        command: run
+        environment:
+            - OPENFGA_DATASTORE_ENGINE=postgres
+            - OPENFGA_DATASTORE_URI=postgres://postgres:postgres@postgres:5432/rapido?sslmode=disable
+        ports:
+            - "8080:8080"
+            - "8082:8081"
+            - "3000:3000"
+        depends_on:
+            - postgres
+        networks:
+            - rapido_net
+
+    temporal:
+        image: temporalio/auto-setup:latest
+        container_name: rapido-temporal
+        environment:
+            - DB=postgres12
+            - DB_PORT=5432
+            - POSTGRES_USER=postgres
+            - POSTGRES_PWD=postgres
+            - POSTGRES_SEEDS=postgres
+        ports:
+            - "7233:7233"
+        depends_on:
+            - postgres
+        networks:
+            - rapido_net
+
+    temporal-ui:
+        image: temporalio/ui:latest
+        container_name: rapido-temporal-ui
+        environment:
+            - TEMPORAL_ADDRESS=temporal:7233
+            - TEMPORAL_CORS_ORIGINS=http://localhost:3001
+        ports:
+            - "3001:8080"
+        depends_on:
+            - temporal
+        networks:
+            - rapido_net
+
+    materialize:
+        image: materialize/materialized:latest
+        container_name: rapido-materialize
+        ports:
+            - "6875:6875"
+        depends_on:
+            - postgres
+        networks:
+            - rapido_net
+
+volumes:
+    postgres_data:
+    minio_data:
+    opensearch_data:
+    redis_data:
+
+networks:
+    rapido_net:
