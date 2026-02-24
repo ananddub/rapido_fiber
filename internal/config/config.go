@@ -36,6 +36,10 @@ type Config struct {
 
 	// JWT
 	JWTSecret string `json:"jwt_secret"`
+
+	//Mqtt
+	MqttBrokker  string `json:"mqtt_brokker"`
+	MqttClientId string `json:"mqtt_client_id"`
 }
 
 var cfg *Config
@@ -72,6 +76,8 @@ func InitConfig() (*Config, error) {
 	cfg.TemporalPort = getEnvAsInt("TEMPORAL_PORT", 7233)
 
 	cfg.JWTSecret = getEnv("JWT_SECRET", "your-secret-key-change-in-production")
+	cfg.MqttBrokker = getEnv("MQTT_BROKKER", "localhost:1883")
+	cfg.MqttClientId = getEnv("MQTT_CLIENT_ID", "rapido_client")
 
 	return cfg, nil
 }

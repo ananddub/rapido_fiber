@@ -4,6 +4,9 @@ INSERT INTO users (name, phone) VALUES ($1, $2);
 -- name: GetUser :one
 SELECT * FROM users WHERE id = $1 and deleted_at is null;
 
+-- name: GetUserById :one
+SELECT * FROM users WHERE id = $1 and deleted_at is null;
+
 -- name: GetUserByPhone :one
 SELECT * FROM users WHERE phone = $1 and deleted_at is null;
 
@@ -25,6 +28,9 @@ INSERT INTO captains (name, phone) VALUES ($1, $2);
 -- name: GetCaptain :one
 SELECT * FROM captains WHERE id = $1 and deleted_at is null;
 
+-- name: GetCaptainById :one
+SELECT * FROM captains WHERE id = $1 and deleted_at is null;
+
 -- name: ListCaptains :many
 SELECT * FROM captains where deleted_at is null;
 
@@ -37,13 +43,28 @@ UPDATE captains SET deleted_at = $1 WHERE id = $2;
 -- name: RestoreCaptain :exec
 UPDATE captains SET deleted_at = $1 WHERE id = $2;
 
--- name: UpdateCaptainStatus :exec
-UPDATE captains
-SET is_verified = $2,
-    is_active = $3,
-    updated_at = CURRENT_TIMESTAMP
-WHERE id = $1;
-
 -- name: GetCaptainByPhone :one
 SELECT * FROM captains
 WHERE phone = $1 AND deleted_at IS NULL;
+
+-- name: UpdateUserStatus :exec
+UPDATE users
+SET
+    status = $2,
+    current_booking_id = $3,
+    updated_at = CURRENT_TIMESTAMP
+WHERE id = $1;
+
+-- name: UpdateCaptainStatus :exec
+UPDATE captains
+SET
+    status = $2,
+    current_booking_id = $3,
+    updated_at = CURRENT_TIMESTAMP
+WHERE id = $1;
+
+-- name: LockUser :exec
+SELECT * FROM users WHERE id = $1 FOR UPDATE;
+
+-- name: LockCaptain :exec
+SELECT * FROM captains WHERE id = $1 FOR UPDATE;

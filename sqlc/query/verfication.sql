@@ -229,7 +229,7 @@ RETURNING *;
 -- ========== COMPLETE VERIFICATION DATA ==========
 
 -- name: GetCompleteVerificationData :one
-SELECT 
+SELECT
     cv.*,
     json_build_object(
         'id', cad.id,

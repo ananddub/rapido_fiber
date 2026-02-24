@@ -9,7 +9,53 @@ import (
 	"database/sql/driver"
 	"fmt"
 	"time"
+
+	"github.com/google/uuid"
 )
+
+type BookingStatus string
+
+const (
+	BookingStatusPENDING   BookingStatus = "PENDING"
+	BookingStatusCONFIRMED BookingStatus = "CONFIRMED"
+	BookingStatusCOMPLETED BookingStatus = "COMPLETED"
+	BookingStatusCANCELLED BookingStatus = "CANCELLED"
+)
+
+func (e *BookingStatus) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = BookingStatus(s)
+	case string:
+		*e = BookingStatus(s)
+	default:
+		return fmt.Errorf("unsupported scan type for BookingStatus: %T", src)
+	}
+	return nil
+}
+
+type NullBookingStatus struct {
+	BookingStatus BookingStatus
+	Valid         bool // Valid is true if BookingStatus is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullBookingStatus) Scan(value interface{}) error {
+	if value == nil {
+		ns.BookingStatus, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.BookingStatus.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullBookingStatus) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.BookingStatus), nil
+}
 
 type DocumentStatusEnum string
 
@@ -52,6 +98,48 @@ func (ns NullDocumentStatusEnum) Value() (driver.Value, error) {
 		return nil, nil
 	}
 	return string(ns.DocumentStatusEnum), nil
+}
+
+type UserStatus string
+
+const (
+	UserStatusAVAILABLE UserStatus = "AVAILABLE"
+	UserStatusBUSY      UserStatus = "BUSY"
+)
+
+func (e *UserStatus) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = UserStatus(s)
+	case string:
+		*e = UserStatus(s)
+	default:
+		return fmt.Errorf("unsupported scan type for UserStatus: %T", src)
+	}
+	return nil
+}
+
+type NullUserStatus struct {
+	UserStatus UserStatus
+	Valid      bool // Valid is true if UserStatus is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullUserStatus) Scan(value interface{}) error {
+	if value == nil {
+		ns.UserStatus, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.UserStatus.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullUserStatus) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.UserStatus), nil
 }
 
 type VerificationStageEnum string
@@ -142,17 +230,40 @@ func (ns NullVerificationStatusEnum) Value() (driver.Value, error) {
 	return string(ns.VerificationStatusEnum), nil
 }
 
+type Booking struct {
+	ID             uuid.UUID
+	UserID         int32
+	CaptainID      int32
+	PickupLocation string
+	DropLocation   string
+	ActualPrice    string
+	PaidPrice      string
+	IsPaid         sql.NullBool
+	IsSuccessful   sql.NullBool
+	IsVerified     sql.NullBool
+	PaymentMethod  sql.NullString
+	Status         NullBookingStatus
+	IsCancelled    sql.NullBool
+	CancelledBy    sql.NullString
+	IsDeleted      sql.NullBool
+	DeletedAt      sql.NullTime
+	CreatedAt      sql.NullTime
+	UpdatedAt      sql.NullTime
+}
+
 type Captain struct {
-	ID         int32
-	Name       string
-	Phone      string
-	IsVerified sql.NullBool
-	IsActive   sql.NullBool
-	IsBlocked  sql.NullBool
-	IsDeleted  sql.NullBool
-	DeletedAt  sql.NullTime
-	CreatedAt  sql.NullTime
-	UpdatedAt  sql.NullTime
+	ID               int32
+	Name             string
+	Phone            string
+	Status           NullUserStatus
+	CurrentBookingID uuid.NullUUID
+	IsVerified       sql.NullBool
+	IsActive         sql.NullBool
+	IsBlocked        sql.NullBool
+	IsDeleted        sql.NullBool
+	DeletedAt        sql.NullTime
+	CreatedAt        sql.NullTime
+	UpdatedAt        sql.NullTime
 }
 
 type CaptainAadharDetail struct {
@@ -257,14 +368,16 @@ type Location struct {
 }
 
 type User struct {
-	ID         int32
-	Name       string
-	Phone      string
-	IsVerified sql.NullBool
-	IsActive   sql.NullBool
-	IsBlocked  sql.NullBool
-	IsDeleted  sql.NullBool
-	DeletedAt  sql.NullTime
-	CreatedAt  sql.NullTime
-	UpdatedAt  sql.NullTime
+	ID               int32
+	Name             string
+	Phone            string
+	Status           NullUserStatus
+	CurrentBookingID uuid.NullUUID
+	IsVerified       sql.NullBool
+	IsActive         sql.NullBool
+	IsBlocked        sql.NullBool
+	IsDeleted        sql.NullBool
+	DeletedAt        sql.NullTime
+	CreatedAt        sql.NullTime
+	UpdatedAt        sql.NullTime
 }

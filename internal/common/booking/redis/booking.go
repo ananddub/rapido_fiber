@@ -2,17 +2,20 @@ package booking_common
 
 import (
 	"context"
+	"strconv"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 func (r *Repo) CreateBooking(ctx context.Context, bookingId string, data BookingData) error {
-	err := r.LockCaptain(ctx, data.CaptainId)
+	err := r.LockCaptain(ctx, string(data.CaptainId))
 	if err != nil {
 		return err
 	}
-	err = r.LockUser(ctx, data.UserId)
+	err = r.LockUser(ctx, string(data.UserId))
 	if err != nil {
-		r.UnlockCaptain(ctx, data.CaptainId)
+		r.UnlockCaptain(ctx, string(data.CaptainId))
 		return err
 	}
 	_, err = r.redis.HSet(ctx, r.GetBookingKey(bookingId),
@@ -44,10 +47,20 @@ func (r *Repo) GetBooking(ctx context.Context, bookingId string) (*BookingData, 
 	if len(result) == 0 {
 		return nil, nil
 	}
+
+	captainId, err := strconv.ParseInt(result["captain_id"], 10, 32)
+	if err != nil {
+		return nil, err
+	}
+	userId, err := strconv.ParseInt(result["user_id"], 10, 32)
+	if err != nil {
+		return nil, err
+	}
+
 	bookingData := &BookingData{
-		BookingId:      bookingId,
-		CaptainId:      result["captain_id"],
-		UserId:         result["user_id"],
+		BookingId:      uuid.MustParse(bookingId),
+		CaptainId:      int32(captainId),
+		UserId:         int32(userId),
 		Status:         result["status"],
 		PickupLocation: result["pickup_location"],
 		DropLocation:   result["drop_location"],
@@ -78,11 +91,11 @@ func (r *Repo) CancelBooking(ctx context.Context, bookingId string) error {
 	if booking == nil {
 		return nil
 	}
-	err = r.UnlockCaptain(ctx, booking.CaptainId)
+	err = r.UnlockCaptain(ctx, string(booking.CaptainId))
 	if err != nil {
 		return err
 	}
-	err = r.UnlockUser(ctx, booking.UserId)
+	err = r.UnlockUser(ctx, string(booking.UserId))
 	if err != nil {
 		return err
 	}

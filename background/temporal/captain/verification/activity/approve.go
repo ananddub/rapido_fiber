@@ -2,7 +2,6 @@ package activity_verfication
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 
 	"encore.app/gen/pgdb"
@@ -26,9 +25,9 @@ func (a *ActivityVerfication) ApproveCaptain(ctx context.Context, captainID int3
 	}
 
 	err = a.conn.Query.UpdateCaptainStatus(ctx, pgdb.UpdateCaptainStatusParams{
-		ID:         captainID,
-		IsVerified: sql.NullBool{Bool: true, Valid: true},
-		IsActive:   sql.NullBool{Bool: true, Valid: true},
+		ID: captainID,
+		// IsVerified: sql.NullBool{Bool: true, Valid: true},
+		// IsActive:   sql.NullBool{Bool: true, Valid: true},
 	})
 	if err != nil {
 		fmt.Printf("Failed to update Captain table status: %v\n", err)

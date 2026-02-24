@@ -17,6 +17,13 @@ func NewRepo(redis *redis.Client) *Repo {
 	}
 }
 
+func (r *Repo) Init(ctx context.Context) error {
+	if err := r.CreateSchemaFtQuery(ctx); err != nil {
+		return fmt.Errorf("failed to create schema and indexes: %w", err)
+	}
+	return nil
+}
+
 func (r *Repo) createCaptainIndex(ctx context.Context) error {
 	client := r.redis
 
@@ -30,9 +37,9 @@ func (r *Repo) createCaptainIndex(ctx context.Context) error {
 		"status", "TAG",
 		"booking_id", "TEXT",
 		"user_id", "TEXT",
-		"is_booked", "TAG",
-		"is_available", "TAG",
-		"is_online", "TAG",
+		"is_online", "BOOLEAN",
+		"client_id", "TEXT",
+		"ip_address", "TEXT",
 		"updated_at", "NUMERIC", "SORTABLE",
 	).Result()
 	return err
@@ -50,10 +57,10 @@ func (r *Repo) createUserIndex(ctx context.Context) error {
 		"phone", "TEXT",
 		"booking_id", "TEXT",
 		"captain_id", "TEXT",
-		"is_booked", "TAG",
 		"status", "TAG",
-		"is_available", "TAG",
 		"is_online", "TAG",
+		"client_id", "TEXT",
+		"ip_address", "TEXT",
 		"updated_at", "NUMERIC", "SORTABLE",
 	).Result()
 	return err

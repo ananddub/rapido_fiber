@@ -8,24 +8,39 @@ import (
 
 func (r *Repo) CreateCaptain(ctx context.Context, data CaptainData) error {
 	key := r.GetCaptainKey(data.Id)
+
+	fields := make([]interface{}, 0)
+
+	if data.Name != "" {
+		fields = append(fields, "name", data.Name)
+	}
+
+	if data.Phone != "" {
+		fields = append(fields, "phone", data.Phone)
+	}
+	if data.Status != "" {
+		fields = append(fields, "status", data.Status)
+	}
+	fields = append(fields, "status", "available")
+
+	if data.Longitude != 0 || data.Latitude != 0 {
+		fields = append(fields, "location", fmt.Sprintf("%f,%f", data.Longitude, data.Latitude))
+	}
+
 	isBooked := "0"
 	isAvailable := "1"
 	if data.IsBooked {
 		isBooked = "1"
 		isAvailable = "0"
 	}
-	_, err := r.redis.HSet(ctx, key,
-		"name", data.Name,
-		"phone", data.Phone,
-		"status", "available",
-		"location", fmt.Sprintf("%f,%f", data.Longitude, data.Latitude), // longitude, latitude
-		"is_booked", isBooked,
-		"is_available", isAvailable,
-		"is_online", "1",
-		"booking_id", "",
-		"user_id", "",
-		"updated_at", time.Now().Unix(),
-	).Result()
+	fields = append(fields, "is_booked", isBooked)
+	fields = append(fields, "is_available", isAvailable)
+	fields = append(fields, "is_online", "1")
+	fields = append(fields, "booking_id", "")
+	fields = append(fields, "user_id", "")
+	fields = append(fields, "updated_at", time.Now().Unix())
+
+	_, err := r.redis.HSet(ctx, key, fields...).Result()
 	return err
 }
 

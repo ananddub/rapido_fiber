@@ -9,6 +9,7 @@ import (
 
 	"github.com/IBM/sarama"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
+	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/redis/go-redis/v9"
 	"go.temporal.io/sdk/client"
 )
@@ -20,6 +21,7 @@ type Connections struct {
 	S3Client      *s3.Client
 	Temporal      client.Client
 	Query         *pgdb.Queries
+	Mqtt          mqtt.Client
 }
 
 var connection *Connections
@@ -59,6 +61,11 @@ func InitConnection() (*Connections, error) {
 		return nil, fmt.Errorf("failed to connect to temporal: %w", err)
 	}
 
+	mqttClient, err := NewMQTT(cfg)
+	if err != nil {
+		return nil, fmt.Errorf("failed to connect to mqtt: %w", err)
+	}
+
 	queries := pgdb.New(db)
 
 	connection = &Connections{
@@ -68,6 +75,7 @@ func InitConnection() (*Connections, error) {
 		S3Client:      s3Client,
 		Temporal:      temporalClient,
 		Query:         queries,
+		Mqtt:          mqttClient,
 	}
 
 	return connection, nil

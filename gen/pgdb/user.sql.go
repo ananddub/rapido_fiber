@@ -8,6 +8,8 @@ package pgdb
 import (
 	"context"
 	"database/sql"
+
+	"github.com/google/uuid"
 )
 
 const createCaptain = `-- name: CreateCaptain :exec
@@ -67,7 +69,7 @@ func (q *Queries) DeleteUser(ctx context.Context, arg DeleteUserParams) error {
 }
 
 const getCaptain = `-- name: GetCaptain :one
-SELECT id, name, phone, is_verified, is_active, is_blocked, is_deleted, deleted_at, created_at, updated_at FROM captains WHERE id = $1 and deleted_at is null
+SELECT id, name, phone, status, current_booking_id, is_verified, is_active, is_blocked, is_deleted, deleted_at, created_at, updated_at FROM captains WHERE id = $1 and deleted_at is null
 `
 
 func (q *Queries) GetCaptain(ctx context.Context, id int32) (Captain, error) {
@@ -77,6 +79,32 @@ func (q *Queries) GetCaptain(ctx context.Context, id int32) (Captain, error) {
 		&i.ID,
 		&i.Name,
 		&i.Phone,
+		&i.Status,
+		&i.CurrentBookingID,
+		&i.IsVerified,
+		&i.IsActive,
+		&i.IsBlocked,
+		&i.IsDeleted,
+		&i.DeletedAt,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const getCaptainById = `-- name: GetCaptainById :one
+SELECT id, name, phone, status, current_booking_id, is_verified, is_active, is_blocked, is_deleted, deleted_at, created_at, updated_at FROM captains WHERE id = $1 and deleted_at is null
+`
+
+func (q *Queries) GetCaptainById(ctx context.Context, id int32) (Captain, error) {
+	row := q.db.QueryRowContext(ctx, getCaptainById, id)
+	var i Captain
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Phone,
+		&i.Status,
+		&i.CurrentBookingID,
 		&i.IsVerified,
 		&i.IsActive,
 		&i.IsBlocked,
@@ -89,7 +117,7 @@ func (q *Queries) GetCaptain(ctx context.Context, id int32) (Captain, error) {
 }
 
 const getCaptainByPhone = `-- name: GetCaptainByPhone :one
-SELECT id, name, phone, is_verified, is_active, is_blocked, is_deleted, deleted_at, created_at, updated_at FROM captains
+SELECT id, name, phone, status, current_booking_id, is_verified, is_active, is_blocked, is_deleted, deleted_at, created_at, updated_at FROM captains
 WHERE phone = $1 AND deleted_at IS NULL
 `
 
@@ -100,6 +128,8 @@ func (q *Queries) GetCaptainByPhone(ctx context.Context, phone string) (Captain,
 		&i.ID,
 		&i.Name,
 		&i.Phone,
+		&i.Status,
+		&i.CurrentBookingID,
 		&i.IsVerified,
 		&i.IsActive,
 		&i.IsBlocked,
@@ -112,7 +142,7 @@ func (q *Queries) GetCaptainByPhone(ctx context.Context, phone string) (Captain,
 }
 
 const getUser = `-- name: GetUser :one
-SELECT id, name, phone, is_verified, is_active, is_blocked, is_deleted, deleted_at, created_at, updated_at FROM users WHERE id = $1 and deleted_at is null
+SELECT id, name, phone, status, current_booking_id, is_verified, is_active, is_blocked, is_deleted, deleted_at, created_at, updated_at FROM users WHERE id = $1 and deleted_at is null
 `
 
 func (q *Queries) GetUser(ctx context.Context, id int32) (User, error) {
@@ -122,6 +152,32 @@ func (q *Queries) GetUser(ctx context.Context, id int32) (User, error) {
 		&i.ID,
 		&i.Name,
 		&i.Phone,
+		&i.Status,
+		&i.CurrentBookingID,
+		&i.IsVerified,
+		&i.IsActive,
+		&i.IsBlocked,
+		&i.IsDeleted,
+		&i.DeletedAt,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const getUserById = `-- name: GetUserById :one
+SELECT id, name, phone, status, current_booking_id, is_verified, is_active, is_blocked, is_deleted, deleted_at, created_at, updated_at FROM users WHERE id = $1 and deleted_at is null
+`
+
+func (q *Queries) GetUserById(ctx context.Context, id int32) (User, error) {
+	row := q.db.QueryRowContext(ctx, getUserById, id)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Phone,
+		&i.Status,
+		&i.CurrentBookingID,
 		&i.IsVerified,
 		&i.IsActive,
 		&i.IsBlocked,
@@ -134,7 +190,7 @@ func (q *Queries) GetUser(ctx context.Context, id int32) (User, error) {
 }
 
 const getUserByPhone = `-- name: GetUserByPhone :one
-SELECT id, name, phone, is_verified, is_active, is_blocked, is_deleted, deleted_at, created_at, updated_at FROM users WHERE phone = $1 and deleted_at is null
+SELECT id, name, phone, status, current_booking_id, is_verified, is_active, is_blocked, is_deleted, deleted_at, created_at, updated_at FROM users WHERE phone = $1 and deleted_at is null
 `
 
 func (q *Queries) GetUserByPhone(ctx context.Context, phone string) (User, error) {
@@ -144,6 +200,8 @@ func (q *Queries) GetUserByPhone(ctx context.Context, phone string) (User, error
 		&i.ID,
 		&i.Name,
 		&i.Phone,
+		&i.Status,
+		&i.CurrentBookingID,
 		&i.IsVerified,
 		&i.IsActive,
 		&i.IsBlocked,
@@ -156,7 +214,7 @@ func (q *Queries) GetUserByPhone(ctx context.Context, phone string) (User, error
 }
 
 const listCaptains = `-- name: ListCaptains :many
-SELECT id, name, phone, is_verified, is_active, is_blocked, is_deleted, deleted_at, created_at, updated_at FROM captains where deleted_at is null
+SELECT id, name, phone, status, current_booking_id, is_verified, is_active, is_blocked, is_deleted, deleted_at, created_at, updated_at FROM captains where deleted_at is null
 `
 
 func (q *Queries) ListCaptains(ctx context.Context) ([]Captain, error) {
@@ -172,6 +230,8 @@ func (q *Queries) ListCaptains(ctx context.Context) ([]Captain, error) {
 			&i.ID,
 			&i.Name,
 			&i.Phone,
+			&i.Status,
+			&i.CurrentBookingID,
 			&i.IsVerified,
 			&i.IsActive,
 			&i.IsBlocked,
@@ -194,7 +254,7 @@ func (q *Queries) ListCaptains(ctx context.Context) ([]Captain, error) {
 }
 
 const listUsers = `-- name: ListUsers :many
-SELECT id, name, phone, is_verified, is_active, is_blocked, is_deleted, deleted_at, created_at, updated_at FROM users where deleted_at is null
+SELECT id, name, phone, status, current_booking_id, is_verified, is_active, is_blocked, is_deleted, deleted_at, created_at, updated_at FROM users where deleted_at is null
 `
 
 func (q *Queries) ListUsers(ctx context.Context) ([]User, error) {
@@ -210,6 +270,8 @@ func (q *Queries) ListUsers(ctx context.Context) ([]User, error) {
 			&i.ID,
 			&i.Name,
 			&i.Phone,
+			&i.Status,
+			&i.CurrentBookingID,
 			&i.IsVerified,
 			&i.IsActive,
 			&i.IsBlocked,
@@ -229,6 +291,24 @@ func (q *Queries) ListUsers(ctx context.Context) ([]User, error) {
 		return nil, err
 	}
 	return items, nil
+}
+
+const lockCaptain = `-- name: LockCaptain :exec
+SELECT id, name, phone, status, current_booking_id, is_verified, is_active, is_blocked, is_deleted, deleted_at, created_at, updated_at FROM captains WHERE id = $1 FOR UPDATE
+`
+
+func (q *Queries) LockCaptain(ctx context.Context, id int32) error {
+	_, err := q.db.ExecContext(ctx, lockCaptain, id)
+	return err
+}
+
+const lockUser = `-- name: LockUser :exec
+SELECT id, name, phone, status, current_booking_id, is_verified, is_active, is_blocked, is_deleted, deleted_at, created_at, updated_at FROM users WHERE id = $1 FOR UPDATE
+`
+
+func (q *Queries) LockUser(ctx context.Context, id int32) error {
+	_, err := q.db.ExecContext(ctx, lockUser, id)
+	return err
 }
 
 const restoreCaptain = `-- name: RestoreCaptain :exec
@@ -276,20 +356,21 @@ func (q *Queries) UpdateCaptain(ctx context.Context, arg UpdateCaptainParams) er
 
 const updateCaptainStatus = `-- name: UpdateCaptainStatus :exec
 UPDATE captains
-SET is_verified = $2,
-    is_active = $3,
+SET
+    status = $2,
+    current_booking_id = $3,
     updated_at = CURRENT_TIMESTAMP
 WHERE id = $1
 `
 
 type UpdateCaptainStatusParams struct {
-	ID         int32
-	IsVerified sql.NullBool
-	IsActive   sql.NullBool
+	ID               int32
+	Status           NullUserStatus
+	CurrentBookingID uuid.NullUUID
 }
 
 func (q *Queries) UpdateCaptainStatus(ctx context.Context, arg UpdateCaptainStatusParams) error {
-	_, err := q.db.ExecContext(ctx, updateCaptainStatus, arg.ID, arg.IsVerified, arg.IsActive)
+	_, err := q.db.ExecContext(ctx, updateCaptainStatus, arg.ID, arg.Status, arg.CurrentBookingID)
 	return err
 }
 
@@ -305,5 +386,25 @@ type UpdateUserParams struct {
 
 func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) error {
 	_, err := q.db.ExecContext(ctx, updateUser, arg.Name, arg.Phone, arg.ID)
+	return err
+}
+
+const updateUserStatus = `-- name: UpdateUserStatus :exec
+UPDATE users
+SET
+    status = $2,
+    current_booking_id = $3,
+    updated_at = CURRENT_TIMESTAMP
+WHERE id = $1
+`
+
+type UpdateUserStatusParams struct {
+	ID               int32
+	Status           NullUserStatus
+	CurrentBookingID uuid.NullUUID
+}
+
+func (q *Queries) UpdateUserStatus(ctx context.Context, arg UpdateUserStatusParams) error {
+	_, err := q.db.ExecContext(ctx, updateUserStatus, arg.ID, arg.Status, arg.CurrentBookingID)
 	return err
 }

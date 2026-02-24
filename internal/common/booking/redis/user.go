@@ -8,25 +8,36 @@ import (
 
 func (r *Repo) CreateUser(ctx context.Context, data UserData) error {
 	key := r.GetUserKey(data.Id)
+
+	fields := make([]interface{}, 0)
+
+	if data.Name != "" {
+		fields = append(fields, "name", data.Name)
+	}
+	if data.Phone != "" {
+		fields = append(fields, "phone", data.Phone)
+	}
+	if data.Latitude != 0 || data.Longitude != 0 {
+		fields = append(fields, "location", fmt.Sprintf("%f,%f", data.Longitude, data.Latitude))
+	}
+	if data.Status != "" {
+		fields = append(fields, "status", data.Status)
+	}
 	isBooked := "0"
 	isAvailable := "1"
 	if data.IsBooked {
 		isBooked = "1"
 		isAvailable = "0"
 	}
+	fields = append(fields, "is_booked", isBooked)
+	fields = append(fields, "is_available", isAvailable)
+	fields = append(fields, "is_online", "1")
+	fields = append(fields, "status", "available")
+	fields = append(fields, "booking_id", "")
+	fields = append(fields, "captain_id", "")
+	fields = append(fields, "updated_at", time.Now().Unix())
 
-	_, err := r.redis.HSet(ctx, key,
-		"name", data.Name,
-		"phone", data.Phone,
-		"status", "available",
-		"location", fmt.Sprintf("%f,%f", data.Longitude, data.Latitude), // longitude, latitude
-		"is_booked", isBooked,
-		"is_available", isAvailable,
-		"is_online", "1",
-		"booking_id", "",
-		"captain_id", "",
-		"updated_at", time.Now().Unix(),
-	).Result()
+	_, err := r.redis.HSet(ctx, key, fields...).Result()
 
 	return err
 }

@@ -531,7 +531,7 @@ func (q *Queries) GetCaptainVerificationByCaptainID(ctx context.Context, captain
 
 const getCompleteVerificationData = `-- name: GetCompleteVerificationData :one
 
-SELECT 
+SELECT
     cv.id, cv.captain_id, cv.overall_status, cv.current_stage, cv.is_blacklisted, cv.blacklist_reason, cv.created_at, cv.updated_at,
     json_build_object(
         'id', cad.id,
